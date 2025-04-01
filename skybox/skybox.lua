@@ -1,9 +1,8 @@
-
 -- HOW TO USE:
 -- 1. Paste this in code:
 --------------------------------------------------------------
 -- Modules = {
---     skybox = "github.com/Nanskip/cubzh-modules/skybox"
+--     skybox = "github.com/gdevillele/cubzh-modules/skybox"
 -- }
 --------------------------------------------------------------
 -- 2. Make your config, here's the example:
@@ -21,22 +20,13 @@
 local skybox = {}
 
 skybox.load = function(config, func)
-    local defaultConfig = {
-        scale = 1000,
-        url = "https://e7.pngegg.com/pngimages/57/621/png-clipart-skybox-texture-mapping-panorama-others-texture-atmosphere.png"
-    }
+	local defaultConfig = {
+		scale = 1000,
+		url = "https://files.cu.bzh/skyboxes/blue-sky-with-clouds-at-noon.png",
+	}
 
-    local url = config.url or defaultConfig.url
-    local scale = config.scale or defaultConfig.scale
-    if func == nil then
-        func = function(obj)
-			obj:SetParent(Camera)
-			obj.Tick = function(self)
-				self.Rotation = Rotation(0, 0, 0)
-				self.Position = Camera.Position - Number3(self.Scale.X, self.Scale.Y, -self.Scale.Z)/2
-			end
-		end
-    end
+	local url = config.url or defaultConfig.url
+	local scale = config.scale or defaultConfig.scale
 
 	HTTP:Get(url, function(data)
 		if data.StatusCode ~= 200 then
@@ -46,67 +36,91 @@ skybox.load = function(config, func)
 		local image = data.Body
 		local object = Object()
 
-		object.Scale = scale
+		local distanceFromCenter = scale * 0.5
+		local quadSize = Number2(scale, scale)
+		object.Scale = 1
+
+		local oneThird = 1.0 / 3.0
+		local twoThirds = 2.0 / 3.0
+		local halfPi = math.pi * 0.5
 
 		local back = Quad()
-		back.Image = image
-		back.Size = Number2(1, 1)
-		back.Tiling = Number2(0.25, 0.3335)
-		back.Offset = Number2(0, 0.3335)
 		back:SetParent(object)
+		back.Anchor:Set(0.5, 0.5)
+		back.LocalPosition:Set(0, 0, -distanceFromCenter)
+		back.LocalRotation:Set(0, math.rad(180), 0)
+		back.IsDoubleSided = false
+		back.Image = image
+		back.Size = quadSize
+		back.Tiling = Number2(0.25, oneThird)
+		back.Offset = Number2(0, oneThird)
 		back.IsUnlit = true
 
 		local left = Quad()
-		left.Image = image
-		left.Size = Number2(1, 1)
-		left.Tiling = Number2(0.25, 0.3335)
-		left.Offset = Number2(0.25, 0.3335)
-		left.Position = back.Position + Number3(1, 0, 0)
-		left.Rotation.Y = math.pi/2
 		left:SetParent(object)
+		left.Anchor:Set(0.5, 0.5)
+		left.LocalPosition:Set(-distanceFromCenter, 0, 0)
+		left.LocalRotation:Set(0, math.rad(-90), 0)
+		left.IsDoubleSided = false
+		left.Image = image
+		left.Size = quadSize
+		left.Tiling = Number2(0.25, oneThird)
+		left.Offset = Number2(0.25, oneThird)
 		left.IsUnlit = true
 
 		local front = Quad()
-		front.Image = image
-		front.Size = Number2(1, 1)
-		front.Tiling = Number2(0.25, 0.3335)
-		front.Offset = Number2(0.5, 0.3335)
-		front.Position = back.Position + Number3(1, 0, -1)
-		front.Rotation.Y = math.pi
 		front:SetParent(object)
+		front.Anchor:Set(0.5, 0.5)
+		front.LocalPosition:Set(0, 0, distanceFromCenter)
+		front.LocalRotation:Set(0, 0, 0)
+		front.IsDoubleSided = false
+		front.Image = image
+		front.Size = quadSize
+		front.Tiling = Number2(0.25, oneThird)
+		front.Offset = Number2(0.5, oneThird)
 		front.IsUnlit = true
 
 		local right = Quad()
-		right.Image = image
-		right.Size = Number2(1, 1)
-		right.Tiling = Number2(0.25, 0.3335)
-		right.Offset = Number2(0.75, 0.3335)
-		right.Position = back.Position + Number3(0, 0, -1)
-		right.Rotation.Y = -math.pi/2
 		right:SetParent(object)
+		right.Anchor:Set(0.5, 0.5)
+		right.LocalPosition:Set(distanceFromCenter, 0, 0)
+		right.LocalRotation:Set(0, math.rad(90), 0)
+		front.IsDoubleSided = false
+		right.Image = image
+		right.Size = quadSize
+		right.Tiling = Number2(0.25, oneThird)
+		right.Offset = Number2(0.75, oneThird)
 		right.IsUnlit = true
 
 		local down = Quad()
-		down.Image = image
-		down.Size = Number2(1, 1*1.001)
-		down.Tiling = Number2(0.25, 0.3335)
-		down.Offset = Number2(0.25, 0.6668)
-		down.Position = back.Position + Number3(-1*0.001, 1*0.002, 0)
-		down.Rotation = Rotation(math.pi/2, math.pi/2, 0)
 		down:SetParent(object)
+		down.Anchor:Set(0.5, 0.5)
+		down.LocalPosition:Set(0, -distanceFromCenter, 0)
+		down.LocalRotation:Set(math.rad(90), 0, math.rad(90))
+		down.IsDoubleSided = false
+		down.Image = image
+		down.Size = quadSize
+		down.Tiling = Number2(0.25, oneThird)
+		down.Offset = Number2(0.25, twoThirds)
 		down.IsUnlit = true
 
 		local up = Quad()
-		up.Image = image
-		up.Size = Number2(1, 1)
-		up.Tiling = Number2(0.25, 0.3335)
-		up.Offset = Number2(0.25, 0)
-		up.Position = back.Position + Number3(1, 1, 0)
-		up.Rotation = Rotation(-math.pi/2, math.pi/2, 0)
 		up:SetParent(object)
+		up.Anchor:Set(0.5, 0.5)
+		up.LocalPosition:Set(0, distanceFromCenter, 0)
+		up.LocalRotation:Set(math.rad(-90), 0, math.rad(-90))
+		up.IsDoubleSided = false
+		up.Image = image
+		up.Size = quadSize
+		up.Tiling = Number2(0.25, oneThird)
+		up.Offset = Number2(0.25, 0)
 		up.IsUnlit = true
 
-		func(object)
+		object:SetParent(Camera)
+		object.LocalPosition:Set(0, 0, 0)
+		object.Tick = function(self)
+			self.Rotation:Set(0, 0, 0)
+		end
 	end)
 end
 
